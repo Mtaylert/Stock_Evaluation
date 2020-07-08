@@ -7,18 +7,13 @@ import matplotlib.pyplot as plt
 from numpy import *
 from datetime import datetime
 import seaborn as sns
-
-now = datetime.now()
-now = str(now.year)+"-"+str(now.month)+"-"+str(now.day)
 import requests
 import pandas as pd
 import arrow
-import datetime
 import os
 import numpy as np
 
 import datapackage
-
 from datetime import timedelta
 
 
@@ -135,7 +130,7 @@ def generate_stock_data(start_date,end_date,ticker):
     return data
 
 
-def volalitity(df):
+def volalitity_func(df):
     variance_frame = df.groupby(['ticker'])['DailyVariance'].mean().reset_index()
     variance_frame['Daily_Volatility'] = np.sqrt(variance_frame['DailyVariance'])
     variance_frame['Annualized_Volatility'] = variance_frame['Daily_Volatility']*np.sqrt(250/1)
@@ -152,13 +147,14 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,loo
     
     
     if upward==True:
-        start_date = datetime.today() - timedelta(days=start_date_lb)
-        yesterday = datetime.today() - timedelta(days=1)
+        start_date = datetime.now() - timedelta(days=start_date_lb)
+        yesterday = datetime.now() - timedelta(days=1)
 
         start_date = str(start_date.year)+"-"+str(start_date.month)+"-"+str(start_date.day)
         yesterday = str(yesterday.year)+"-"+str(yesterday.month)+"-"+str(yesterday.day)
-
-        nasdaq_data = nasdaq_data[(nasdaq_data['Date']>=start_date)&(nasdaq_data['Date']<=end_date)]
+        
+        volatility_df = volalitity_func(nasdaq_data)
+        nasdaq_data = nasdaq_data[(nasdaq_data['Date']>=pd.to_datetime(start_date).date())&(nasdaq_data['Date']<=pd.to_datetime(end_date).date())]
 
         save_columns = ['Date','ticker','MACD','signal','Close']
         sort_values = []
@@ -199,19 +195,19 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,loo
         Final_Shifts=Final_Shifts.reset_index(drop=True)
         Final_Shifts=Final_Shifts[Final_Shifts['MACD']>0]
         
-        
+        Final_Shifts=pd.merge(Final_Shifts,volatility_df,on='ticker')
         
         
         return (nasdaq_data,Final_Shifts)
     
     
     else:
-        start_date = datetime.today() - timedelta(days=start_date_lb)
-        yesterday = datetime.today() - timedelta(days=1)
+        start_date = datetime.now() - timedelta(days=start_date_lb)
+        yesterday = datetime.now() - timedelta(days=1)
         start_date = str(start_date.year)+"-"+str(start_date.month)+"-"+str(start_date.day)
         yesterday = str(yesterday.year)+"-"+str(yesterday.month)+"-"+str(yesterday.day)
-
-        nasdaq_data = nasdaq_data[(nasdaq_data['Date']>=start_date)&(nasdaq_data['Date']<=end_date)]
+        volatility_df = volalitity_func(nasdaq_data)
+        nasdaq_data = nasdaq_data[(nasdaq_data['Date']>=pd.to_datetime(start_date).date())&(nasdaq_data['Date']<=pd.to_datetime(end_date).date())]
 
         save_columns = ['Date','ticker','MACD','signal','Close']
         sort_values = []
@@ -248,6 +244,8 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,loo
         Final_Shifts=Final_Shifts[Final_Shifts['Date']==end_date]
         Final_Shifts=Final_Shifts.reset_index(drop=True)
         Final_Shifts=Final_Shifts[Final_Shifts['MACD']<0]
+        Final_Shifts=pd.merge(Final_Shifts,volatility_df,on='ticker')
+
         return (nasdaq_data,Final_Shifts)
         
 
