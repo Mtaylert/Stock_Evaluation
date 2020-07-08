@@ -15,9 +15,11 @@ import pandas as pd
 import arrow
 import datetime
 import os
+import numpy as np
 
+import datapackage
 
-
+from datetime import timedelta
 
 
 
@@ -101,8 +103,11 @@ def generate_stock_data(start_date,end_date,ticker):
     
     #prev_day_hi_or_low close
     data['Prev_Day_Compare_Close'] = data['Close']-data['Close_Shift_1']
-    data['Prev_Day_Growth_Close'] = (data['Close']-data['Close_Shift_1'])/data['Close_Shift_1']
+    data['DailyReturn'] = (data['Close']-data['Close_Shift_1'])/data['Close_Shift_1']
     
+    
+    data['DailyReturnLog'] = np.log(data['Close']/data['Close_Shift_1'])
+    data['DailyVariance'] = np.square(data['DailyReturnLog'])
     
     #prev_day_hi_or_low open
     data['Prev_Day_Compare_Open'] = data['Open']-data['Open_Shift_1']
@@ -130,10 +135,22 @@ def generate_stock_data(start_date,end_date,ticker):
     return data
 
 
+def volalitity(df):
+    variance_frame = df.groupby(['ticker'])['DailyVariance'].mean().reset_index()
+    variance_frame['Daily_Volatility'] = np.sqrt(variance_frame['DailyVariance'])
+    variance_frame['Annualized_Volatility'] = variance_frame['Daily_Volatility']*np.sqrt(250/1)
+    return variance_frame
 
 
-
-def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
+def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,lookback=5):
+    
+    '''
+    This function is intented to flag tickers that have crossed the zero line based on a 
+    lookback parameter. The default is set to 5 days.
+    '''
+    
+    
+    
     if upward==True:
         start_date = datetime.today() - timedelta(days=start_date_lb)
         yesterday = datetime.today() - timedelta(days=1)
@@ -145,7 +162,10 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
 
         save_columns = ['Date','ticker','MACD','signal','Close']
         sort_values = []
-        for i in range(1,6):
+        
+        
+        
+        for i in range(1,lookback):
             if i==1:
                 nasdaq_data['MACD_Shift_{}Day'.format(i)]=nasdaq_data.groupby('ticker')['MACD'].shift(i)
 
@@ -161,7 +181,9 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
 
                 
                 
-
+        
+        
+        
         Top_Shifts = nasdaq_data[save_columns]
 
         new_frame = []
@@ -176,7 +198,13 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
         Final_Shifts=Final_Shifts[Final_Shifts['Date']==end_date]
         Final_Shifts=Final_Shifts.reset_index(drop=True)
         Final_Shifts=Final_Shifts[Final_Shifts['MACD']>0]
+        
+        
+        
+        
         return (nasdaq_data,Final_Shifts)
+    
+    
     else:
         start_date = datetime.today() - timedelta(days=start_date_lb)
         yesterday = datetime.today() - timedelta(days=1)
@@ -187,7 +215,9 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
 
         save_columns = ['Date','ticker','MACD','signal','Close']
         sort_values = []
-        for i in range(1,6):
+        
+        
+        for i in range(1,lookback):
             if i==1:
                 nasdaq_data['MACD_Shift_{}Day'.format(i)]=nasdaq_data.groupby('ticker')['MACD'].shift(i)
 
@@ -221,6 +251,35 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True):
         return (nasdaq_data,Final_Shifts)
         
 
+def extract_tickers():
+    data_url = 'https://datahub.io/core/nasdaq-listings/datapackage.json'
 
+    # to load Data Package into storage
+    package = datapackage.Package(data_url)
 
+    # to load only tabular data
+    resources = package.resources
+    for resource in resources:
+        if resource.tabular:
+            NASDAQ = pd.read_csv(resource.descriptor['path'])
+            
+            
+    
+            
+ 
+    return NASDAQ
 
+def ticker_datapull(start,end):
+    
+    NASDAQ = extract_tickers()
+    all_data = []
+
+    for sym in NASDAQ['Symbol']:
+        try:
+            curr = generate_stock_data(start,end,sym)
+            all_data.append(curr)
+        except:
+            print('{} is delisted'.format(sym))
+
+    NASDAQ_df = pd.concat(all_data)
+    return NASDAQ_df
