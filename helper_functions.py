@@ -9,7 +9,6 @@ from datetime import datetime
 import seaborn as sns
 import requests
 import pandas as pd
-import arrow
 import os
 import numpy as np
 
@@ -19,20 +18,20 @@ from datetime import timedelta
 
 
 
+
 def get_quote_data_by_minute(symbol='SPCE', data_range='1d', data_interval='1m'):
     res = requests.get('https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range={data_range}&interval={data_interval}'.format(**locals()),verify=True)
     data = res.json()
     body = data['chart']['result'][0]    
     #dt = datetime.datetime
-    dt = pd.Series(map(lambda x: arrow.get(x).datetime.replace(tzinfo=None), body['timestamp']), name='Datetime')
+    dt = pd.Series(map(lambda x: datetime.fromtimestamp(x), body['timestamp']), name='Datetime')
     df = pd.DataFrame(body['indicators']['quote'][0], index=dt)
     dg = pd.DataFrame(body['timestamp'])    
     df = df.loc[:, ('open', 'high', 'low', 'close', 'volume')]
     df.dropna(inplace=True)     #removing NaN rows
     df.columns = ['OPEN', 'HIGH','LOW','CLOSE','VOLUME']    #Renaming columns in pandas
     df=df.reset_index()
-    return df
-
+    return df,body
 
 
 
@@ -191,7 +190,8 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,loo
             new_frame.append(curr_shift)
 
         Final_Shifts = pd.concat(new_frame)
-        Final_Shifts=Final_Shifts[Final_Shifts['Date']==end_date]
+        max_date = Final_Shifts['Date'].max()
+        Final_Shifts=Final_Shifts[Final_Shifts['Date']==max_date]
         Final_Shifts=Final_Shifts.reset_index(drop=True)
         Final_Shifts=Final_Shifts[Final_Shifts['MACD']>0]
         
@@ -241,7 +241,9 @@ def upward_trending_stocks(nasdaq_data,end_date,start_date_lb=10,upward=True,loo
             new_frame.append(curr_shift)
 
         Final_Shifts = pd.concat(new_frame)
-        Final_Shifts=Final_Shifts[Final_Shifts['Date']==end_date]
+        max_date = Final_Shifts['Date'].max()
+
+        Final_Shifts=Final_Shifts[Final_Shifts['Date']==max_date]
         Final_Shifts=Final_Shifts.reset_index(drop=True)
         Final_Shifts=Final_Shifts[Final_Shifts['MACD']<0]
         Final_Shifts=pd.merge(Final_Shifts,volatility_df,on='ticker')
