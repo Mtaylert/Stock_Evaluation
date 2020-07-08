@@ -31,7 +31,7 @@ def get_quote_data_by_minute(symbol='SPCE', data_range='1d', data_interval='1m')
     df.dropna(inplace=True)     #removing NaN rows
     df.columns = ['OPEN', 'HIGH','LOW','CLOSE','VOLUME']    #Renaming columns in pandas
     df=df.reset_index()
-    return df,body
+    return df
 
 
 
