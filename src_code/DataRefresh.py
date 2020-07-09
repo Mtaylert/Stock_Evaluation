@@ -1,4 +1,3 @@
-
 import yfinance as yf  
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,6 +15,13 @@ import numpy as np
 import datapackage
 from datetime import timedelta
 
+import sys
+import warnings
+
+warnings.filterwarnings("ignore")
+
+    
+    
 print('--------------------start job------------------')
 
 NASDAQ=pd.read_csv('../data/NASDAQ_Update.csv')
@@ -49,5 +55,9 @@ db = create_engine(db_string)
 
 TopShifts_up.to_sql(name='Upward_Trends_Curr', con=db, schema='public',if_exists='replace')
 TopShifts_down.to_sql(name='Downward_Trends_Curr', con=db, schema='public',if_exists='replace')
+print('----------------------MACD Tables Complete-----------------')
+
+NASDAQ_df.to_sql(name='All_Prices_Full_Curr', con=db, schema='public',if_exists='replace')
+
 
 print('----------------------job complete-----------------')
