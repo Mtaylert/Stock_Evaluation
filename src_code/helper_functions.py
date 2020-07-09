@@ -50,17 +50,9 @@ def generate_stock_data(start_date,end_date,ticker):
     data['ticker']=ticker
     min_by_min.loc[min_by_min.shape[0]-1]
     #extract day of the week
-    mapping = {0:'Mon',1:'Tues',2:'Wed',3:'Thurs',4:'Fri',5:'Sat',6:'Sun'}
-    data['DOW'] = data['Date'].dt.dayofweek
-    data['DOW_Mapped'] =data['DOW'].map(mapping)
     data['Date']=data['Date'].dt.date
-    #data['Date']=pd.to_datetime(data['Date'])
     
-    
-    #calculate 7 day moving average with open and close
-    data['5Day_Moving_Average_Close'] = data['Close'].rolling(window=5).mean()
-    data['5Day_Moving_Average_Open'] = data['Open'].rolling(window=5).mean()
-    
+  
     #long ma 
     data['26Day_Moving_Average_Close'] = data['Close'].ewm(span=26).mean()
     
@@ -90,10 +82,7 @@ def generate_stock_data(start_date,end_date,ticker):
     data['Close_Shift_1']=    data['Close'].shift(1)
     data['Open_Shift_1']=    data['Open'].shift(1)
     
-    #lag variables 1 WEEK
-    data['Close_Shift_5']=    data['Close'].shift(5)
-    data['Open_Shift_5']=    data['Open'].shift(5)
-    
+   
     
     #prev_day_hi_or_low close
     data['Prev_Day_Compare_Close'] = data['Close']-data['Close_Shift_1']
@@ -102,29 +91,11 @@ def generate_stock_data(start_date,end_date,ticker):
     
     data['DailyReturnLog'] = np.log(data['Close']/data['Close_Shift_1'])
     data['DailyVariance'] = np.square(data['DailyReturnLog'])
-    
-    #prev_day_hi_or_low open
-    data['Prev_Day_Compare_Open'] = data['Open']-data['Open_Shift_1']
-    data['Prev_Day_Growth_Open'] = (data['Open']-data['Open_Shift_1'])/data['Open_Shift_1']
+  
     
     
     
-    
-    #prev_day_hi_or_low close
-    data['Prev_Week_Compare_Close'] = data['Close']-data['Close_Shift_5']
-    data['Prev_Week_Growth_Close'] = (data['Close']-data['Close_Shift_5'])/data['Close_Shift_5']
-    
-    
-    #prev_day_hi_or_low open
-    data['Prev_Week_Compare_Open'] = data['Open']-data['Open_Shift_5']
-    data['Prev_Week_Growth_Open'] = (data['Open']-data['Open_Shift_5'])/data['Open_Shift_5']
-    
-    
-    
-    
-    data=data.iloc[5:]
-    data
-
+ 
     
     return data
 

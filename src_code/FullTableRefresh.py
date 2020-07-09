@@ -49,6 +49,7 @@ import getpass
 db_string = "postgres://MONEYDB:Richmond1@moneydb.cpbpjwbxydzi.us-east-2.rds.amazonaws.com:5432/postgres"
 db = create_engine(db_string)
 
+from datetime import datetime
 
 NASDAQ_df['BATCH_LOAD_TIME'] = datetime.now()
 NASDAQ_df.to_sql(name='All_Prices_Full_Curr', con=db, schema='public',if_exists='replace')
