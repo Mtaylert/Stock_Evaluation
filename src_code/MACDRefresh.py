@@ -24,13 +24,17 @@ warnings.filterwarnings("ignore")
     
 print('--------------------start job------------------')
 
-NASDAQ=pd.read_csv('../data/NASDAQ_Update.csv')
+NASDAQ=pd.read_csv('../data/nasdaq-listed_csv.csv')
+SP=pd.read_csv('../data/constituents_csv.csv')
+
+All_Ticks = pd.concat([NASDAQ[['Symbol']],
+                      SP[['Symbol']]])
 
 
 all_data = []
 start = '2020-05-01'
 
-for sym in NASDAQ['Symbol']:
+for sym in All_Ticks['Symbol']:
     try:
         curr = hp.generate_stock_data(start,now,sym)
         all_data.append(curr)
@@ -38,10 +42,10 @@ for sym in NASDAQ['Symbol']:
         #exception is for delisted tickers
         pass
 
-NASDAQ_df = pd.concat(all_data)
+Stocks_df = pd.concat(all_data)
 
-CurrNas_up,TopShifts_up = hp.upward_trending_stocks(NASDAQ_df,now,10,upward=True,lookback=6)
-CurrNas_down,TopShifts_down = hp.upward_trending_stocks(NASDAQ_df,now,10,upward=False,lookback=6)
+CurrNas_up,TopShifts_up = hp.upward_trending_stocks(Stocks_df,now,10,upward=True,lookback=6)
+CurrNas_down,TopShifts_down = hp.upward_trending_stocks(Stocks_df,now,10,upward=False,lookback=6)
 
 
 
